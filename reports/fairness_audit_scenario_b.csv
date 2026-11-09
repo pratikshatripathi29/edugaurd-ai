@@ -1,0 +1,7 @@
+attribute,subgroup,sample_size,at_risk_count,passing_count,flagged_count,selection_rate,recall,precision,false_positive_rate,accuracy,true_positives,false_positives,false_negatives,true_negatives,small_sample_warning
+sex,F,119,28,91,36,0.3025,0.9286,0.7222,0.1099,0.8992,26,10,2,81,False
+sex,M,84,20,64,28,0.3333,0.9,0.6429,0.1562,0.8571,18,10,2,54,False
+address,R,50,16,34,21,0.42,1.0,0.7619,0.1471,0.9,16,5,0,29,True
+address,U,153,32,121,43,0.281,0.875,0.6512,0.124,0.8758,28,15,4,106,False
+school,GP,148,32,116,40,0.2703,0.875,0.7,0.1034,0.8919,28,12,4,104,False
+school,MS,55,16,39,24,0.4364,1.0,0.6667,0.2051,0.8545,16,8,0,31,True

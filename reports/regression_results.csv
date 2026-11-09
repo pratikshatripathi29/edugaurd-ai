@@ -1,0 +1,9 @@
+scenario,model_name,cv_rmse_mean,cv_rmse_std,test_mae_all,test_rmse_all,test_r2_all,test_medae_all,test_mae_nonzero,test_rmse_nonzero,test_r2_nonzero,test_medae_nonzero,best_hyperparameters
+Scenario A,Baseline (Mean),3.8929,0.3486,2.722,3.6923,-0.0002,1.6492,2.3217,2.8789,-0.0285,1.6492,{}
+Scenario A,Ridge Regression,3.5158,0.3348,2.2906,3.0549,0.3154,1.7334,1.9941,2.4785,0.2377,1.6874,"{""regressor__alpha"": 100.0}"
+Scenario A,Random Forest,3.4025,0.3967,2.0635,2.765,0.4391,1.7663,1.9323,2.5117,0.2172,1.731,"{""regressor__max_depth"": 10, ""regressor__min_samples_split"": 5, ""regressor__n_estimators"": 200}"
+Scenario A,XGBoost Regressor,3.4037,0.3282,2.1538,2.807,0.422,1.8027,1.9875,2.5203,0.2118,1.7216,"{""regressor__learning_rate"": 0.05, ""regressor__max_depth"": 3, ""regressor__n_estimators"": 100, ""regressor__subsample"": 1.0}"
+Scenario B,Baseline (Mean),3.8929,0.3486,2.722,3.6923,-0.0002,1.6492,2.3217,2.8789,-0.0285,1.6492,{}
+Scenario B,Ridge Regression,1.6239,0.1427,0.8874,1.35,0.8663,0.6286,0.78,0.9783,0.8812,0.6285,"{""regressor__alpha"": 50.0}"
+Scenario B,Random Forest,1.5235,0.0846,0.8237,1.2701,0.8816,0.5683,0.7742,1.1228,0.8436,0.5717,"{""regressor__max_depth"": 5, ""regressor__min_samples_split"": 2, ""regressor__n_estimators"": 200}"
+Scenario B,XGBoost Regressor,1.4938,0.1056,0.8213,1.2595,0.8836,0.6126,0.7808,1.132,0.841,0.6139,"{""regressor__learning_rate"": 0.05, ""regressor__max_depth"": 3, ""regressor__n_estimators"": 100, ""regressor__subsample"": 1.0}"

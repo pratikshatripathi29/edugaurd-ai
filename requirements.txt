@@ -1,0 +1,35 @@
+# ==============================================================================
+# EduGuard AI - Pinned Compatible Dependencies
+# Compatible with Python 3.11 - 3.13 on Windows / Linux / macOS
+# ==============================================================================
+
+# Core Data Manipulation & Scientific Computing
+pandas>=2.2.0,<3.0.0
+numpy>=1.26.4,<3.0.0
+
+# Machine Learning & Explainable AI (SHAP)
+scikit-learn>=1.4.0,<2.0.0
+xgboost>=2.0.0,<4.0.0
+shap>=0.45.0,<1.0.0
+
+# Visualization & Interactive UI
+matplotlib>=3.8.0,<4.0.0
+seaborn>=0.13.0,<1.0.0
+plotly>=5.20.0,<8.0.0
+streamlit>=1.35.0,<2.0.0
+
+# Database, ORM & Model Persistence
+sqlalchemy>=2.0.0,<3.0.0
+joblib>=1.4.0,<2.0.0
+
+# Environment Configuration & Data Formats
+python-dotenv>=1.0.0,<2.0.0
+openpyxl>=3.1.2,<4.0.0
+
+# Testing & Exploratory Research
+pytest>=8.0.0,<10.0.0
+jupyter>=1.0.0,<2.0.0
+
+# Optional Google Gemini Generative AI
+google-genai>=0.1.0,<4.0.0
+
