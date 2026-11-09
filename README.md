@@ -7,7 +7,7 @@
 [![SHAP](https://img.shields.io/badge/XAI-TreeSHAP-green.svg)](https://shap.readthedocs.io/)
 [![Tests: 80 Passed](https://img.shields.io/badge/Tests-80%20Passed-brightgreen.svg)](tests/)
 
-> 🌐 **Live Web Application:** [EduGuard AI Live App](https://edugaurd-ai-pt.streamlit.app/) *(Link placeholder)*
+> 🌐 **Live Web Application:** [EduGuard AI Live App](https://edugaurd-ai-pt.streamlit.app/) 
 
 ---
 
