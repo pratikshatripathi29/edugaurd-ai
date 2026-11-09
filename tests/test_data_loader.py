@@ -101,3 +101,4 @@ def test_load_and_combine_data():
     assert (df_comb["is_simulated"] == False).all(), "Real UCI data must have is_simulated=False"
     assert set(df_comb["subject"]) == {"math", "portuguese"}
     assert "at_risk" in df_comb.columns
+

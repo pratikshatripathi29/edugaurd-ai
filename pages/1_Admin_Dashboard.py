@@ -195,7 +195,7 @@ low_pct = (low_risk_count / total_students) * 100 if total_students > 0 else 0
 avg_attendance = df_weekly["avg_attendance"].mean() if not df_weekly.empty else 90.5
 avg_pred_score = df_cohort["predicted_score"].mean()
 
-col1, col2, col3, col4, col5 = st.columns(5)
+col1, col2, col3, col4, col5, col6 = st.columns(6)
 with col1:
     st.markdown(
         get_kpi_html("Total Students", f"{total_students}", f"{selected_scenario}"),
@@ -217,6 +217,11 @@ with col4:
         unsafe_allow_html=True,
     )
 with col5:
+    st.markdown(
+        get_kpi_html("Avg Attendance", f"{avg_attendance:.1f}%", "12-Week Mean [SIMULATED]", border_color="#8b5cf6"),
+        unsafe_allow_html=True,
+    )
+with col6:
     st.markdown(
         get_kpi_html("Avg Final Score", f"{avg_pred_score:.2f} / 20", f"Pass Mark: {RISK_PASS_MARK}"),
         unsafe_allow_html=True,

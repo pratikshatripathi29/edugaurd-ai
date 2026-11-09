@@ -396,3 +396,4 @@ if not df_fairness.empty:
         """,
         unsafe_allow_html=True,
     )
+
