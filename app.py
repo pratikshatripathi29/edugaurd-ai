@@ -316,7 +316,4 @@ with col_mod6:
         unsafe_allow_html=True,
     )
 
-st.markdown("---")
-st.caption(
-    "EduGuard AI — Final Year Project | Python 3.11+, scikit-learn, XGBoost, TreeSHAP, SQLAlchemy 2.x, Streamlit, Plotly"
-)
+

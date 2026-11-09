@@ -702,6 +702,42 @@ def get_all_interventions(
         return _query(s)
 
 
+def update_alert_status(
+    alert_id: int,
+    new_status: str,
+    session: Optional[Session] = None,
+) -> Optional[Alert]:
+    """Update status of an alert (e.g., mark as 'Reviewed' or 'Dismissed').
+
+    Args:
+        alert_id: Alert primary key ID.
+        new_status: 'Open', 'Reviewed', or 'Dismissed'.
+        session: Active session.
+
+    Returns:
+        Updated Alert instance, or None if not found.
+    """
+    valid_statuses = {"Open", "Reviewed", "Dismissed"}
+    if new_status not in valid_statuses:
+        raise ValueError(f"Invalid alert status '{new_status}'. Must be one of {valid_statuses}.")
+
+    def _update(s: Session) -> Optional[Alert]:
+        alert = s.scalar(select(Alert).where(Alert.id == alert_id))
+        if not alert:
+            return None
+
+        alert.status = new_status
+        if new_status in {"Reviewed", "Dismissed"}:
+            alert.resolved_at = _utcnow()
+        s.flush()
+        return alert
+
+    if session is not None:
+        return _update(session)
+    with get_db_session() as s:
+        return _update(s)
+
+
 def get_student_interventions(
     student_id: str,
     session: Optional[Session] = None,

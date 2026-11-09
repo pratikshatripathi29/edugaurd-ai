@@ -46,6 +46,7 @@ from src.explainability import (
     get_transformed_features,
     waterfall,
 )
+from src.features import add_engineered_features
 from src.recommendations import get_recommendations
 from src.utils import (
     apply_plotly_theme,
@@ -359,23 +360,16 @@ else:
 # ==============================================================================
 st.markdown("<div class='section-header'>🔍 SHAP Explainability & Feature Attribution</div>", unsafe_allow_html=True)
 
-# Build student feature dict for explainability
+# Build student feature DataFrame for explainability
 student_full_dict = {**st_data, **acad_data}
-if "G1" in acad_data and "G2" in acad_data and acad_data["G1"] is not None and acad_data["G2"] is not None:
-    student_full_dict["grade_trend"] = acad_data["G2"] - acad_data["G1"]
-    student_full_dict["g1_passing"] = 1 if acad_data["G1"] >= 10.0 else 0
-    student_full_dict["g2_passing"] = 1 if acad_data["G2"] >= 10.0 else 0
-
-student_full_dict["alcohol_total"] = acad_data.get("Dalc", 1) + acad_data.get("Walc", 1)
-student_full_dict["high_absence"] = 1 if acad_data.get("absences", 0) > 10 else 0
-student_full_dict["failures_flag"] = 1 if acad_data.get("failures", 0) > 0 else 0
-student_full_dict["study_time_ratio"] = acad_data.get("studytime", 2) / (acad_data.get("freetime", 3) + 1e-5)
+clean_input_df = pd.DataFrame([student_full_dict])
+clean_input_df = add_engineered_features(clean_input_df, include_trend=(scenario_code == "B"))
 
 with st.spinner("Computing real TreeSHAP game-theoretic attributions..."):
     try:
         explainer, preprocessor, feature_names = load_explainer_resources(scenario_code)
         explanation = explain_student(
-            row=pd.Series(student_full_dict),
+            row=clean_input_df.iloc[0],
             explainer=explainer,
             preprocessor=preprocessor,
             feature_names=feature_names,
@@ -428,7 +422,7 @@ if explanation:
 
     # Waterfall plot
     with st.expander("📊 View Interactive Matplotlib SHAP Waterfall Plot", expanded=True):
-        X_trans, names = get_transformed_features(preprocessor, pd.DataFrame([student_full_dict]), auto_drop_leakage=True)
+        X_trans, names = get_transformed_features(preprocessor, clean_input_df, auto_drop_leakage=True)
         exp_obj = compute_shap_explanation(explainer, X_trans, names, is_classifier=True)
         
         fig, ax = plt.subplots(figsize=(9, 5))

@@ -187,8 +187,15 @@ def get_transformed_features(
             )
 
     # Clean student key or other administrative columns if present
-    drop_candidates = ["student_key", "is_simulated"]
+    drop_candidates = ["student_key", "is_simulated", "student_id", "data_source"]
     clean_df = clean_df.drop(columns=[c for c in drop_candidates if c in clean_df.columns], errors="ignore")
+
+    # Automatically compute engineered features if missing from input
+    from src.features import add_engineered_features
+    engineered_cols = {"alcohol_total", "study_time_ratio", "support_total", "failures_flag", "high_absence"}
+    has_trend = "grade_trend" in [c for c in getattr(preprocessor, "feature_names_in_", [])]
+    if not engineered_cols.issubset(set(clean_df.columns)) or (has_trend and "grade_trend" not in clean_df.columns):
+        clean_df = add_engineered_features(clean_df, include_trend=has_trend)
 
     X_trans = preprocessor.transform(clean_df)
     if hasattr(X_trans, "toarray"):
