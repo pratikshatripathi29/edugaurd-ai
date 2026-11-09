@@ -32,6 +32,7 @@ from src.database import (
     Intervention,
     Student,
     add_intervention,
+    ensure_database_ready,
     get_db_session,
     get_student_interventions,
 )
@@ -53,6 +54,9 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded",
 )
+
+# Ensure database tables exist and are seeded before any queries run
+ensure_database_ready()
 
 load_custom_css()
 

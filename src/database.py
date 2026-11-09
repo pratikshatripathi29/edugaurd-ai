@@ -38,6 +38,7 @@ from sqlalchemy import (
     UniqueConstraint,
     create_engine,
     event,
+    func,
     select,
 )
 from sqlalchemy.engine import Engine
@@ -49,6 +50,7 @@ from sqlalchemy.orm import (
     relationship,
     sessionmaker,
 )
+import streamlit as st
 
 from src.config import DATABASE_PATH, SQL_DATABASE_URL
 
@@ -312,6 +314,11 @@ _GLOBAL_ENGINE: Optional[Engine] = None
 def get_engine(db_url: Optional[str] = None) -> Engine:
     """Retrieve or create the SQLAlchemy database Engine.
 
+    Guarantees:
+    1. Parent directory exists.
+    2. Tables are created via Base.metadata.create_all(engine) upon engine creation.
+    3. SQLite multi-threading is enabled.
+
     Args:
         db_url: Database connection string. If None, defaults to SQL_DATABASE_URL.
 
@@ -323,9 +330,19 @@ def get_engine(db_url: Optional[str] = None) -> Engine:
         db_url = SQL_DATABASE_URL
 
     if _GLOBAL_ENGINE is None or str(_GLOBAL_ENGINE.url) != db_url:
-        # SQLite needs connect_args={"check_same_thread": False} for multi-threaded Streamlit
+        # If SQLite path, ensure parent directory exists
+        if "sqlite" in db_url.lower():
+            clean_path_str = db_url.replace("sqlite:///", "").replace("sqlite://", "")
+            if clean_path_str and clean_path_str != ":memory:":
+                db_file_path = Path(clean_path_str)
+                if not db_file_path.is_absolute():
+                    db_file_path = _ROOT / db_file_path
+                db_file_path.parent.mkdir(parents=True, exist_ok=True)
+
         connect_args = {"check_same_thread": False} if "sqlite" in db_url.lower() else {}
         _GLOBAL_ENGINE = create_engine(db_url, connect_args=connect_args, echo=False)
+        # Ensure all tables and schema migrations exist immediately upon engine creation
+        init_db(_GLOBAL_ENGINE)
 
     return _GLOBAL_ENGINE
 
@@ -374,6 +391,246 @@ def reset_db(engine: Optional[Engine] = None) -> None:
         engine = get_engine()
     Base.metadata.drop_all(bind=engine)
     Base.metadata.create_all(bind=engine)
+
+
+def seed_database_from_processed(
+    engine: Optional[Engine] = None,
+    reset: bool = False,
+) -> Dict[str, int]:
+    """Seed the database using only files committed to git (data/processed/ and models/).
+
+    Strictly complies with PROJECT_CONTEXT.md Rule 2.1:
+    - Reads only data/processed/test.csv and models/
+    - NEVER touches or depends on data/raw/
+    - Flags all synthetic multi-week records as data_source='SIMULATED'
+
+    Args:
+        engine: Database Engine. Defaults to get_engine().
+        reset: If True, drops and recreates schema before seeding.
+
+    Returns:
+        Dictionary of seeded table row counts.
+    """
+    if engine is None:
+        engine = get_engine()
+
+    if reset:
+        reset_db(engine)
+    else:
+        init_db(engine)
+
+    from src.config import PROCESSED_DATA_DIR
+    test_csv_path = PROCESSED_DATA_DIR / "test.csv"
+    if not test_csv_path.exists():
+        test_csv_path = _ROOT / "data" / "processed" / "test.csv"
+    if not test_csv_path.exists():
+        raise FileNotFoundError(f"Required processed test split not found at: {test_csv_path}")
+
+    df_test = pd.read_csv(test_csv_path)
+    n_students = len(df_test)
+    df_test["student_id"] = [f"EDU-{i+1:04d}" for i in range(n_students)]
+
+    student_records = []
+    academic_records = []
+
+    for _, row in df_test.iterrows():
+        st_id = row["student_id"]
+        st_obj = Student(
+            student_id=st_id,
+            student_key=str(row["student_key"]) if pd.notna(row.get("student_key")) else None,
+            school=str(row["school"]) if pd.notna(row.get("school")) else None,
+            sex=str(row["sex"]) if pd.notna(row.get("sex")) else None,
+            age=int(row["age"]) if pd.notna(row.get("age")) else None,
+            address=str(row["address"]) if pd.notna(row.get("address")) else None,
+            famsize=str(row["famsize"]) if pd.notna(row.get("famsize")) else None,
+            Pstatus=str(row["Pstatus"]) if pd.notna(row.get("Pstatus")) else None,
+            Medu=int(row["Medu"]) if pd.notna(row.get("Medu")) else None,
+            Fedu=int(row["Fedu"]) if pd.notna(row.get("Fedu")) else None,
+            Mjob=str(row["Mjob"]) if pd.notna(row.get("Mjob")) else None,
+            Fjob=str(row["Fjob"]) if pd.notna(row.get("Fjob")) else None,
+            reason=str(row["reason"]) if pd.notna(row.get("reason")) else None,
+            guardian=str(row["guardian"]) if pd.notna(row.get("guardian")) else None,
+            data_source="REAL_UCI",
+        )
+        student_records.append(st_obj)
+
+        acad_obj = AcademicRecord(
+            student_id=st_id,
+            subject=str(row.get("subject", "math")),
+            traveltime=int(row["traveltime"]) if pd.notna(row.get("traveltime")) else None,
+            studytime=int(row["studytime"]) if pd.notna(row.get("studytime")) else None,
+            failures=int(row["failures"]) if pd.notna(row.get("failures")) else None,
+            schoolsup=str(row["schoolsup"]) if pd.notna(row.get("schoolsup")) else None,
+            famsup=str(row["famsup"]) if pd.notna(row.get("famsup")) else None,
+            paid=str(row["paid"]) if pd.notna(row.get("paid")) else None,
+            activities=str(row["activities"]) if pd.notna(row.get("activities")) else None,
+            nursery=str(row["nursery"]) if pd.notna(row.get("nursery")) else None,
+            higher=str(row["higher"]) if pd.notna(row.get("higher")) else None,
+            internet=str(row["internet"]) if pd.notna(row.get("internet")) else None,
+            romantic=str(row["romantic"]) if pd.notna(row.get("romantic")) else None,
+            famrel=int(row["famrel"]) if pd.notna(row.get("famrel")) else None,
+            freetime=int(row["freetime"]) if pd.notna(row.get("freetime")) else None,
+            goout=int(row["goout"]) if pd.notna(row.get("goout")) else None,
+            Dalc=int(row["Dalc"]) if pd.notna(row.get("Dalc")) else None,
+            Walc=int(row["Walc"]) if pd.notna(row.get("Walc")) else None,
+            health=int(row["health"]) if pd.notna(row.get("health")) else None,
+            absences=int(row["absences"]) if pd.notna(row.get("absences")) else None,
+            G1=float(row["G1"]) if pd.notna(row.get("G1")) else None,
+            G2=float(row["G2"]) if pd.notna(row.get("G2")) else None,
+            G3=float(row["G3"]) if pd.notna(row.get("G3")) else None,
+            data_source="REAL_UCI",
+        )
+        academic_records.append(acad_obj)
+
+    with get_db_session(engine) as session:
+        session.add_all(student_records)
+        session.add_all(academic_records)
+
+    # Weekly performance
+    sim_path = PROCESSED_DATA_DIR / "simulated_weekly_performance.csv"
+    if not sim_path.exists():
+        sim_path = _ROOT / "data" / "processed" / "simulated_weekly_performance.csv"
+
+    if sim_path.exists():
+        df_sim = pd.read_csv(sim_path)
+    else:
+        from src.simulation import generate_simulated_weekly_dataset
+        df_sim = generate_simulated_weekly_dataset(df_test, output_path=sim_path)
+
+    weekly_objs = []
+    for _, row in df_sim.iterrows():
+        w_obj = WeeklyPerformance(
+            student_id=str(row["student_id"]),
+            week_number=int(row["week_number"]),
+            attendance_rate=float(row["attendance_rate"]),
+            quiz_average=float(row["quiz_average"]),
+            assignment_completion=float(row["assignment_completion"]),
+            study_hours=float(row["study_hours"]),
+            trajectory_type=str(row.get("trajectory_type", "STABLE")),
+            notes=str(row.get("notes", "SIMULATED")),
+            data_source="SIMULATED",
+        )
+        weekly_objs.append(w_obj)
+
+    with get_db_session(engine) as session:
+        session.add_all(weekly_objs)
+
+    # Predictions from trained models in models/
+    drop_cols = ["G3", "at_risk", "student_key", "is_simulated", "student_id"]
+    candidate_df = df_test.drop(columns=[c for c in drop_cols if c in df_test.columns], errors="ignore")
+
+    from src.classification import load_classification_model, predict_risk
+    from src.regression import load_model, predict_score
+
+    clf_a, meta_clf_a = load_classification_model("A")
+    reg_a, meta_reg_a = load_model("A")
+    clf_b, meta_clf_b = load_classification_model("B")
+    reg_b, meta_reg_b = load_model("B")
+
+    pred_clf_a = predict_risk(clf_a, meta_clf_a, candidate_df, threshold=0.25)
+    pred_reg_a = predict_score(reg_a, meta_reg_a, candidate_df)
+    pred_clf_b = predict_risk(clf_b, meta_clf_b, candidate_df, threshold=0.15)
+    pred_reg_b = predict_score(reg_b, meta_reg_b, candidate_df)
+
+    pred_records = []
+    for i in range(n_students):
+        st_id = df_test.iloc[i]["student_id"]
+        p_a = Prediction(
+            student_id=st_id,
+            scenario="Scenario A",
+            model_version=meta_clf_a.get("model_version", "v1.0-early"),
+            predicted_score=float(pred_reg_a[i]),
+            at_risk_probability=float(pred_clf_a["probabilities"][i]),
+            is_at_risk=int(pred_clf_a["predictions"][i]),
+            risk_category=str(pred_clf_a["risk_tiers"][i]),
+            top_risk_factors=json.dumps(["failures", "absences", "studytime"]),
+            data_source="REAL_UCI",
+        )
+        pred_records.append(p_a)
+
+        p_b = Prediction(
+            student_id=st_id,
+            scenario="Scenario B",
+            model_version=meta_clf_b.get("model_version", "v1.0-mid"),
+            predicted_score=float(pred_reg_b[i]),
+            at_risk_probability=float(pred_clf_b["probabilities"][i]),
+            is_at_risk=int(pred_clf_b["predictions"][i]),
+            risk_category=str(pred_clf_b["risk_tiers"][i]),
+            top_risk_factors=json.dumps(["G2", "G1", "grade_trend"]),
+            data_source="REAL_UCI",
+        )
+        pred_records.append(p_b)
+
+    with get_db_session(engine) as session:
+        session.add_all(pred_records)
+
+    # Monitor transitions to create Alerts
+    from src.monitoring import monitor_cohort_weekly_transition
+    with get_db_session(engine) as session:
+        monitor_cohort_weekly_transition(df_sim, session=session)
+
+    # Create sample interventions
+    with get_db_session(engine) as session:
+        high_alerts = session.scalars(select(Alert).where(Alert.risk_level == "High")).all()
+        interventions = []
+        for alert in high_alerts[:12]:
+            interv = Intervention(
+                student_id=alert.student_id,
+                alert_id=alert.id,
+                intervention_type="MANDATORY_TUTORING",
+                description=f"Assigned remedial study group following alert: {alert.reason}",
+                assigned_to="Academic Success Center",
+                status="Scheduled",
+                data_source="SIMULATED",
+            )
+            interventions.append(interv)
+        session.add_all(interventions)
+
+    summary = {}
+    with get_db_session(engine) as session:
+        summary["Students"] = session.scalar(select(func.count(Student.id))) or 0
+        summary["AcademicRecords"] = session.scalar(select(func.count(AcademicRecord.id))) or 0
+        summary["WeeklyPerformance"] = session.scalar(select(func.count(WeeklyPerformance.id))) or 0
+        summary["Predictions"] = session.scalar(select(func.count(Prediction.id))) or 0
+        summary["Alerts"] = session.scalar(select(func.count(Alert.id))) or 0
+        summary["Interventions"] = session.scalar(select(func.count(Intervention.id))) or 0
+
+    return summary
+
+
+@st.cache_resource
+def ensure_database_ready() -> Engine:
+    """Ensure database engine is initialized, tables created, and seeded if empty.
+
+    Guarantees:
+    - Tables are created via Base.metadata.create_all(engine).
+    - If Students table is empty, seeds automatically from committed processed data and models.
+    - Safe to call repeatedly (idempotent).
+    - Wrapped in st.cache_resource so it runs once per Streamlit server process.
+    - Catches exceptions and renders a user-friendly st.error before st.stop().
+
+    Returns:
+        Active SQLAlchemy Engine.
+    """
+    try:
+        engine = get_engine()
+        with get_db_session(engine) as session:
+            count = session.scalar(select(func.count(Student.id))) or 0
+
+        if count == 0:
+            seed_database_from_processed(engine=engine, reset=False)
+
+        return engine
+    except Exception as exc:
+        try:
+            st.error(
+                f"🚨 **Database Initialization Error:** The application database could not be initialized or seeded.\n\n"
+                f"**Details:** `{exc}`\n\n"
+                "Please ensure all required processed data (`data/processed/test.csv`) and model artifacts (`models/`) are present in the repository."
+            )
+            st.stop()
+        except Exception:
+            raise exc
 
 
 @contextmanager

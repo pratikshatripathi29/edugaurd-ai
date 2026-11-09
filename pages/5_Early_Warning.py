@@ -37,6 +37,7 @@ from src.database import (
     Student,
     WeeklyPerformance,
     add_intervention,
+    ensure_database_ready,
     get_all_interventions,
     get_db_session,
     record_intervention_followup,
@@ -62,6 +63,9 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded",
 )
+
+# Ensure database tables exist and are seeded before any queries run
+ensure_database_ready()
 
 load_custom_css()
 

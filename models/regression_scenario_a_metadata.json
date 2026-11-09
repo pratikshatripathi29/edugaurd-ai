@@ -1,0 +1,83 @@
+{
+  "model_name": "Random Forest",
+  "scenario": "Scenario A",
+  "model_version": "1.0.0",
+  "creation_date": "2026-11-08T13:18:09.698471+00:00",
+  "features_used": [
+    "traveltime",
+    "studytime",
+    "failures",
+    "famrel",
+    "freetime",
+    "goout",
+    "Dalc",
+    "Walc",
+    "health",
+    "absences",
+    "alcohol_total",
+    "support_total",
+    "high_absence",
+    "study_time_ratio",
+    "failures_flag",
+    "school",
+    "reason",
+    "schoolsup",
+    "famsup",
+    "paid",
+    "activities",
+    "nursery",
+    "higher",
+    "internet",
+    "romantic",
+    "subject"
+  ],
+  "numeric_features": [
+    "traveltime",
+    "studytime",
+    "failures",
+    "famrel",
+    "freetime",
+    "goout",
+    "Dalc",
+    "Walc",
+    "health",
+    "absences",
+    "alcohol_total",
+    "support_total",
+    "high_absence",
+    "study_time_ratio",
+    "failures_flag"
+  ],
+  "categorical_features": [
+    "school",
+    "reason",
+    "schoolsup",
+    "famsup",
+    "paid",
+    "activities",
+    "nursery",
+    "higher",
+    "internet",
+    "romantic",
+    "subject"
+  ],
+  "best_hyperparameters": {
+    "regressor__max_depth": 10,
+    "regressor__min_samples_split": 5,
+    "regressor__n_estimators": 200
+  },
+  "cv_rmse_mean": 3.4025,
+  "cv_rmse_std": 0.3967,
+  "test_metrics_all": {
+    "MAE": 2.0635,
+    "RMSE": 2.765,
+    "R2": 0.4391,
+    "MedAE": 1.7663
+  },
+  "test_metrics_nonzero_g3": {
+    "MAE": 1.9323,
+    "RMSE": 2.5117,
+    "R2": 0.2172,
+    "MedAE": 1.731
+  }
+}

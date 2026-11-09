@@ -30,12 +30,6 @@ htmlcov/
 *.sqlite
 *.sqlite3
 
-# Models & Serialized Checkpoints (Ignore trained artifacts / large binaries)
-models/*.pkl
-models/*.joblib
-models/*.json
-models/*.bin
-
 # Jupyter Notebook Checkpoints
 .ipynb_checkpoints/
 */.ipynb_checkpoints/*

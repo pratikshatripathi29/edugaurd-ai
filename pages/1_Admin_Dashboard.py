@@ -33,7 +33,9 @@ from src.database import (
     WeeklyPerformance,
     add_student,
     bulk_import_csv,
+    ensure_database_ready,
     get_db_session,
+    get_engine,
     update_alert_status,
     update_student,
 )
@@ -53,6 +55,9 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded",
 )
+
+# Ensure database tables exist and are seeded before any queries run
+ensure_database_ready()
 
 load_custom_css()
 
@@ -82,83 +87,89 @@ st.markdown(get_advisory_notice_html(), unsafe_allow_html=True)
 @st.cache_data(ttl=30)
 def load_cohort_dataset(scenario: str = "Scenario B") -> pd.DataFrame:
     """Fetch joined student demographic, academic, and model prediction records."""
-    if not DATABASE_PATH.exists():
-        return pd.DataFrame()
-
-    with get_db_session() as session:
-        stmt = (
-            select(
-                Student.student_id,
-                Student.school,
-                Student.sex,
-                Student.age,
-                Student.address,
-                AcademicRecord.subject,
-                AcademicRecord.studytime,
-                AcademicRecord.failures,
-                AcademicRecord.absences,
-                AcademicRecord.G1,
-                AcademicRecord.G2,
-                AcademicRecord.G3,
-                Prediction.predicted_score,
-                Prediction.at_risk_probability,
-                Prediction.risk_category,
-                Prediction.is_at_risk,
-                Prediction.scenario,
-            )
-            .join(AcademicRecord, Student.student_id == AcademicRecord.student_id)
-            .join(Prediction, Student.student_id == Prediction.student_id)
-            .where(Prediction.scenario == scenario)
+    engine = get_engine()
+    stmt = (
+        select(
+            Student.student_id,
+            Student.school,
+            Student.sex,
+            Student.age,
+            Student.address,
+            AcademicRecord.subject,
+            AcademicRecord.studytime,
+            AcademicRecord.failures,
+            AcademicRecord.absences,
+            AcademicRecord.G1,
+            AcademicRecord.G2,
+            AcademicRecord.G3,
+            Prediction.predicted_score,
+            Prediction.at_risk_probability,
+            Prediction.risk_category,
+            Prediction.is_at_risk,
+            Prediction.scenario,
         )
-        df = pd.read_sql(stmt, session.bind)
-    return df
+        .join(AcademicRecord, Student.student_id == AcademicRecord.student_id)
+        .join(Prediction, Student.student_id == Prediction.student_id)
+        .where(Prediction.scenario == scenario)
+    )
+    try:
+        with engine.connect() as conn:
+            df = pd.read_sql(stmt, conn)
+        return df
+    except Exception as exc:
+        st.error(f"⚠️ Error loading cohort dataset: {exc}")
+        return pd.DataFrame()
 
 
 @st.cache_data(ttl=30)
 def load_weekly_cohort_trends() -> pd.DataFrame:
     """Fetch aggregate weekly performance across all 12 simulated weeks."""
-    if not DATABASE_PATH.exists():
-        return pd.DataFrame()
-
-    with get_db_session() as session:
-        stmt = (
-            select(
-                WeeklyPerformance.week_number,
-                func.avg(WeeklyPerformance.attendance_rate).label("avg_attendance"),
-                func.avg(WeeklyPerformance.quiz_average).label("avg_quiz"),
-                func.avg(WeeklyPerformance.assignment_completion).label("avg_assignment"),
-                func.avg(WeeklyPerformance.study_hours).label("avg_hours"),
-            )
-            .group_by(WeeklyPerformance.week_number)
-            .order_by(WeeklyPerformance.week_number)
+    engine = get_engine()
+    stmt = (
+        select(
+            WeeklyPerformance.week_number,
+            func.avg(WeeklyPerformance.attendance_rate).label("avg_attendance"),
+            func.avg(WeeklyPerformance.quiz_average).label("avg_quiz"),
+            func.avg(WeeklyPerformance.assignment_completion).label("avg_assignment"),
+            func.avg(WeeklyPerformance.study_hours).label("avg_hours"),
         )
-        df = pd.read_sql(stmt, session.bind)
-    return df
+        .group_by(WeeklyPerformance.week_number)
+        .order_by(WeeklyPerformance.week_number)
+    )
+    try:
+        with engine.connect() as conn:
+            df = pd.read_sql(stmt, conn)
+        return df
+    except Exception as exc:
+        st.error(f"⚠️ Error loading weekly cohort trends: {exc}")
+        return pd.DataFrame()
 
 
 @st.cache_data(ttl=30)
 def load_alerts_stream(limit: int = 30) -> pd.DataFrame:
     """Fetch recent early-warning alerts."""
-    if not DATABASE_PATH.exists():
-        return pd.DataFrame()
-
-    with get_db_session() as session:
-        stmt = (
-            select(
-                Alert.id,
-                Alert.student_id,
-                Alert.alert_type,
-                Alert.reason,
-                Alert.risk_level,
-                Alert.status,
-                Alert.alert_date,
-                Alert.data_source,
-            )
-            .order_by(Alert.id.desc())
-            .limit(limit)
+    engine = get_engine()
+    stmt = (
+        select(
+            Alert.id,
+            Alert.student_id,
+            Alert.alert_type,
+            Alert.reason,
+            Alert.risk_level,
+            Alert.status,
+            Alert.alert_date,
+            Alert.data_source,
         )
-        df = pd.read_sql(stmt, session.bind)
-    return df
+        .order_by(Alert.id.desc())
+        .limit(limit)
+    )
+    try:
+        with engine.connect() as conn:
+            df = pd.read_sql(stmt, conn)
+        return df
+    except Exception as exc:
+        st.error(f"⚠️ Error loading alerts stream: {exc}")
+        return pd.DataFrame()
 
 
 # Scenario Selection Toggle

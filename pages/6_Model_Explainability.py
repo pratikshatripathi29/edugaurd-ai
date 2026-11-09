@@ -27,6 +27,7 @@ from PIL import Image
 import streamlit as st
 
 from src.config import FIGURES_DIR, REPORTS_DIR, RISK_PASS_MARK
+from src.database import ensure_database_ready
 from src.utils import get_advisory_notice_html, get_kpi_html, load_custom_css
 
 # Page Configuration
@@ -36,6 +37,9 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded",
 )
+
+# Ensure database tables exist and are seeded before any queries run
+ensure_database_ready()
 
 load_custom_css()
 

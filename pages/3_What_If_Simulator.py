@@ -28,7 +28,13 @@ import streamlit as st
 
 from src.classification import load_classification_model, predict_risk
 from src.config import DATABASE_PATH, RISK_PASS_MARK
-from src.database import AcademicRecord, Student, get_db_session
+from src.database import (
+    AcademicRecord,
+    Student,
+    ensure_database_ready,
+    get_db_session,
+    get_engine,
+)
 from src.features import add_engineered_features
 from src.regression import load_model, predict_score
 from src.utils import (
@@ -47,6 +53,9 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded",
 )
+
+# Ensure database tables exist and are seeded before any queries run
+ensure_database_ready()
 
 load_custom_css()
 
@@ -101,53 +110,55 @@ def load_simulation_models(scenario_code: str = "B"):
 @st.cache_data(ttl=60)
 def get_all_student_profiles() -> pd.DataFrame:
     """Fetch student baseline records from the database for preset loading."""
-    if not DATABASE_PATH.exists():
-        return pd.DataFrame()
-
-    with get_db_session() as session:
-        stmt = (
-            select(
-                Student.student_id,
-                Student.school,
-                Student.sex,
-                Student.age,
-                Student.address,
-                Student.famsize,
-                Student.Pstatus,
-                Student.Medu,
-                Student.Fedu,
-                Student.Mjob,
-                Student.Fjob,
-                Student.reason,
-                Student.guardian,
-                AcademicRecord.subject,
-                AcademicRecord.traveltime,
-                AcademicRecord.studytime,
-                AcademicRecord.failures,
-                AcademicRecord.schoolsup,
-                AcademicRecord.famsup,
-                AcademicRecord.paid,
-                AcademicRecord.activities,
-                AcademicRecord.nursery,
-                AcademicRecord.higher,
-                AcademicRecord.internet,
-                AcademicRecord.romantic,
-                AcademicRecord.famrel,
-                AcademicRecord.freetime,
-                AcademicRecord.goout,
-                AcademicRecord.Dalc,
-                AcademicRecord.Walc,
-                AcademicRecord.health,
-                AcademicRecord.absences,
-                AcademicRecord.G1,
-                AcademicRecord.G2,
-                AcademicRecord.G3,
-            )
-            .join(AcademicRecord, Student.student_id == AcademicRecord.student_id)
-            .order_by(Student.student_id)
+    engine = get_engine()
+    stmt = (
+        select(
+            Student.student_id,
+            Student.school,
+            Student.sex,
+            Student.age,
+            Student.address,
+            Student.famsize,
+            Student.Pstatus,
+            Student.Medu,
+            Student.Fedu,
+            Student.Mjob,
+            Student.Fjob,
+            Student.reason,
+            Student.guardian,
+            AcademicRecord.subject,
+            AcademicRecord.traveltime,
+            AcademicRecord.studytime,
+            AcademicRecord.failures,
+            AcademicRecord.schoolsup,
+            AcademicRecord.famsup,
+            AcademicRecord.paid,
+            AcademicRecord.activities,
+            AcademicRecord.nursery,
+            AcademicRecord.higher,
+            AcademicRecord.internet,
+            AcademicRecord.romantic,
+            AcademicRecord.famrel,
+            AcademicRecord.freetime,
+            AcademicRecord.goout,
+            AcademicRecord.Dalc,
+            AcademicRecord.Walc,
+            AcademicRecord.health,
+            AcademicRecord.absences,
+            AcademicRecord.G1,
+            AcademicRecord.G2,
+            AcademicRecord.G3,
         )
-        df = pd.read_sql(stmt, session.bind)
-    return df
+        .join(AcademicRecord, Student.student_id == AcademicRecord.student_id)
+        .order_by(Student.student_id)
+    )
+    try:
+        with engine.connect() as conn:
+            df = pd.read_sql(stmt, conn)
+        return df
+    except Exception as exc:
+        st.error(f"⚠️ Error loading student profiles from database: {exc}")
+        return pd.DataFrame()
 
 
 df_students = get_all_student_profiles()

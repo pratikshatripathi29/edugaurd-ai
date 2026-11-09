@@ -36,6 +36,7 @@ from src.database import (
     Prediction,
     Student,
     WeeklyPerformance,
+    ensure_database_ready,
     get_db_session,
     update_alert_status,
 )
@@ -63,6 +64,9 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded",
 )
+
+# Ensure database tables exist and are seeded before any queries run
+ensure_database_ready()
 
 load_custom_css()
 

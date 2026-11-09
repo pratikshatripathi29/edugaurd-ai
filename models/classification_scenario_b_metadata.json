@@ -1,0 +1,120 @@
+{
+  "model_name": "Random Forest",
+  "scenario": "Scenario B",
+  "model_version": "1.0.0",
+  "creation_date": "2026-11-09T04:34:26.394177+00:00",
+  "features_used": [
+    "traveltime",
+    "studytime",
+    "failures",
+    "famrel",
+    "freetime",
+    "goout",
+    "Dalc",
+    "Walc",
+    "health",
+    "absences",
+    "alcohol_total",
+    "support_total",
+    "high_absence",
+    "study_time_ratio",
+    "failures_flag",
+    "G1",
+    "G2",
+    "grade_trend",
+    "school",
+    "reason",
+    "schoolsup",
+    "famsup",
+    "paid",
+    "activities",
+    "nursery",
+    "higher",
+    "internet",
+    "romantic",
+    "subject"
+  ],
+  "numeric_features": [
+    "traveltime",
+    "studytime",
+    "failures",
+    "famrel",
+    "freetime",
+    "goout",
+    "Dalc",
+    "Walc",
+    "health",
+    "absences",
+    "alcohol_total",
+    "support_total",
+    "high_absence",
+    "study_time_ratio",
+    "failures_flag",
+    "G1",
+    "G2",
+    "grade_trend"
+  ],
+  "categorical_features": [
+    "school",
+    "reason",
+    "schoolsup",
+    "famsup",
+    "paid",
+    "activities",
+    "nursery",
+    "higher",
+    "internet",
+    "romantic",
+    "subject"
+  ],
+  "best_hyperparameters": {
+    "clf__max_depth": 10,
+    "clf__min_samples_split": 2,
+    "clf__n_estimators": 200
+  },
+  "default_threshold": 0.5,
+  "optimal_threshold": 0.15,
+  "risk_thresholds": {
+    "low": 0.3,
+    "high": 0.6
+  },
+  "val_brier_uncalibrated": 0.0679,
+  "val_brier_calibrated": 0.0666,
+  "test_metrics_default_threshold": {
+    "accuracy": 0.9015,
+    "precision": 0.8043,
+    "recall": 0.7708,
+    "f1_score": 0.7872,
+    "roc_auc": 0.9629,
+    "pr_auc": 0.8961,
+    "brier_score": 0.0679,
+    "confusion_matrix": [
+      [
+        146,
+        9
+      ],
+      [
+        11,
+        37
+      ]
+    ]
+  },
+  "test_metrics_optimal_threshold": {
+    "optimal_threshold": 0.15,
+    "accuracy": 0.8818,
+    "precision": 0.6875,
+    "recall": 0.9167,
+    "f1_score": 0.7857,
+    "confusion_matrix": [
+      [
+        135,
+        20
+      ],
+      [
+        4,
+        44
+      ]
+    ]
+  },
+  "selection_justification": "Selected Random Forest for Scenario B due to superior F1 (0.7872) and PR-AUC (0.8961), robust recall (0.7708), and well-calibrated probabilities (Brier: 0.0679). At optimal threshold 0.15, test recall reaches 0.917 with F1 0.786."
+}

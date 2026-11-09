@@ -18,7 +18,14 @@ from sqlalchemy import func, select
 import streamlit as st
 
 from src.config import DATABASE_PATH, RISK_PASS_MARK, RISK_THRESHOLDS
-from src.database import Alert, Prediction, Student, WeeklyPerformance, get_db_session
+from src.database import (
+    Alert,
+    Prediction,
+    Student,
+    WeeklyPerformance,
+    ensure_database_ready,
+    get_db_session,
+)
 from src.utils import (
     get_advisory_notice_html,
     get_kpi_html,
@@ -33,6 +40,9 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded",
 )
+
+# Ensure database tables exist and are seeded before any queries run
+ensure_database_ready()
 
 # Inject custom navy/white/teal CSS
 load_custom_css()
